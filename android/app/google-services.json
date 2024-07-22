@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531035948682",
+    "project_id": "first-shrawan-ba41b",
+    "storage_bucket": "first-shrawan-ba41b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531035948682:android:e4eef2137a8083ada48f73",
+        "android_client_info": {
+          "package_name": "com.example.first_madness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvWciIrRvW9ad1jwkDGMCiXJFU5oqB01A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
