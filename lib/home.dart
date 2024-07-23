@@ -11,6 +11,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final TextEditingController namecontroller = TextEditingController();
   final TextEditingController positioncontroller = TextEditingController();
+  final TextEditingController searchcontroller = TextEditingController();
 
   final CollectionReference myItems =
       FirebaseFirestore.instance.collection("CRUDitems");
@@ -40,23 +41,110 @@ class _HomeState extends State<Home> {
     });
   }
 
+  Future<void> update(DocumentSnapshot documentsnapshot) async {
+    namecontroller.text = documentsnapshot['name'];
+    positioncontroller.text = documentsnapshot['position'];
+
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return myDialogueBox(
+            name: "update your data",
+            condition: "Update",
+            onpressed: () async {
+              String name = namecontroller.text;
+              String position = positioncontroller.text;
+              // addItems(name, position);
+              await myItems.doc(documentsnapshot.id).update({
+                "name": name,
+                "position": position,
+              });
+              namecontroller.text = '';
+              positioncontroller.text = '';
+              Navigator.pop(context);
+            },
+            context: context);
+      },
+    );
+  }
+
+  Future<void> delete(String productId) async {
+    await myItems.doc(productId).delete();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Deleted Successfully"),
+        backgroundColor: Colors.red,
+        duration: Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  String searchText = '';
+  void onSearchChange(String value) {
+    setState(() {
+      searchText = value;
+    });
+  }
+
+  bool isSearchClick = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue[100],
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Read Page'),
+        title: isSearchClick
+            ? Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: TextField(
+                  onChanged: onSearchChange,
+                  controller: searchcontroller,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+                    hintText: "Search...",
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.black),
+                  ),
+                ),
+              )
+            : const Text(
+                'Firestore CRUD',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+        actions: [
+          IconButton(
+              onPressed: () {
+                setState(() {
+                  isSearchClick = !isSearchClick;
+                });
+              },
+              icon: Icon(
+                isSearchClick ? Icons.close : Icons.search,
+                color: Colors.blue,
+              ))
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: myItems.snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
+            final List<DocumentSnapshot> items = streamSnapshot.data!.docs
+                .where((doc) => doc['name']
+                    .toLowerCase()
+                    .contains(searchText.toLowerCase()))
+                .toList();
             return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
+              itemCount: items.length,
               itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                    streamSnapshot.data!.docs[index];
+                final DocumentSnapshot documentSnapshot = items[index];
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Material(
@@ -68,7 +156,28 @@ class _HomeState extends State<Home> {
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 20),
                       ),
-                      subtitle: Text(documentSnapshot['position']),
+                      subtitle: Text(
+                        documentSnapshot['position'],
+                      ),
+                      trailing: SizedBox(
+                        width: 100,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => update(documentSnapshot),
+                              icon: const Icon(
+                                  Icons.edit), //yo edit wala ho haii dost
+                            ),
+                            IconButton(
+                              onPressed: () => delete(documentSnapshot.id),
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ), //yo edit wala ho haii dost
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -118,7 +227,9 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
                     icon: const Icon(Icons.close),
                   ),
                 ],
